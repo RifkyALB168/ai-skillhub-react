@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" role="img" aria-labelledby="title">
+  <title id="title">Logo AI SkillHub</title>
+  <!-- Satu titik pusat (hub) yang terhubung ke tiga skill -->
+  <g stroke="#ededed" stroke-width="2">
+    <line x1="16" y1="16" x2="16" y2="5"/>
+    <line x1="16" y1="16" x2="26" y2="23"/>
+    <line x1="16" y1="16" x2="6" y2="23"/>
+  </g>
+  <g fill="#ededed">
+    <circle cx="16" cy="16" r="5"/>
+    <circle cx="16" cy="5" r="3"/>
+    <circle cx="26" cy="23" r="3"/>
+    <circle cx="6" cy="23" r="3"/>
+  </g>
+</svg>

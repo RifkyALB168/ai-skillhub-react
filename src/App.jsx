@@ -1,120 +1,85 @@
 import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import Header from './components/Header'
+import SkillSummary from './components/SkillSummary'
+import SkillForm from './components/SkillForm'
+import SkillList from './components/SkillList'
+
+const categories = ['Design', 'Security', 'Data', 'Writing', 'Research', 'Automation']
+const platforms = ['Claude', 'OpenAI', 'Gemini', 'AI Agent', 'General']
+
+// Data awal skill
+const dataAwal = [
+  {
+    id: 1,
+    name: 'UI/UX Designer Assistant',
+    description: 'Memberi masukan layout, warna, dan aksesibilitas dari screenshot desain.',
+    category: 'Design',
+    platform: 'Claude',
+    author: '@design_guru',
+    favs: 124,
+  },
+  {
+    id: 2,
+    name: 'Python Security Auditor',
+    description: 'Memeriksa kode Python untuk celah keamanan seperti SQL injection dan secret yang bocor.',
+    category: 'Security',
+    platform: 'General',
+    author: '@sec_expert',
+    favs: 98,
+  },
+  {
+    id: 3,
+    name: 'SQL Query Optimizer',
+    description: 'Menganalisis query lambat dan menyarankan index atau penulisan ulang query.',
+    category: 'Data',
+    platform: 'OpenAI',
+    author: '@db_admin',
+    favs: 76,
+  },
+  {
+    id: 4,
+    name: 'Research Summarizer',
+    description: 'Merangkum paper ilmiah menjadi poin utama, metode, dan keterbatasan.',
+    category: 'Research',
+    platform: 'Claude',
+    author: '@paper_bot',
+    favs: 54,
+  },
+]
 
 function App() {
-  const [count, setCount] = useState(0)
+  // State daftar skill (array)
+  const [skills, setSkills] = useState(dataAwal)
+
+  function addSkill(form) {
+    const skillBaru = { ...form, id: Date.now(), favs: 0 }
+    setSkills([...skills, skillBaru])
+  }
+
+  function deleteSkill(id) {
+    setSkills(skills.filter((skill) => skill.id !== id))
+  }
+
+  // Data untuk komponen ringkasan
+  const totalKategori = new Set(skills.map((skill) => skill.category)).size
+  const totalFavorit = skills.reduce((total, skill) => total + skill.favs, 0)
 
   return (
     <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+      <Header title="AI SkillHub" subtitle="Kumpulan AI Skills dari Claude, OpenAI, Gemini, dan lainnya" />
 
-      <div className="ticks"></div>
+      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <SkillSummary totalSkill={skills.length} totalKategori={totalKategori} totalFavorit={totalFavorit} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        <div className="grid gap-6 md:grid-cols-[1fr_2fr]">
+          <SkillForm categories={categories} platforms={platforms} onAdd={addSkill} />
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
+          <section>
+            <h2 className="mb-3 text-base font-semibold text-neutral-100">Daftar Skill</h2>
+            <SkillList skills={skills} onDelete={deleteSkill} />
+          </section>
+        </div>
+      </main>
     </>
   )
 }
