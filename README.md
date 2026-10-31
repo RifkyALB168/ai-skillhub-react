@@ -46,9 +46,11 @@ ai-skillhub-react/
 │       ├── SkillSummary.jsx
 │       ├── SkillForm.jsx
 │       ├── SkillList.jsx
-│       └── SkillCard.jsx
+│       ├── SkillCard.jsx
+│       └── GitHubSkills.jsx
 └── docs/
     └── screenshots/
+        └── minggu-7/
 ```
 
 ---
@@ -64,6 +66,7 @@ ai-skillhub-react/
 | `SkillForm` | `categories`, `platforms`, `onAdd` | Form tambah skill (controlled component) |
 | `SkillList` | `skills`, `onDelete` | Daftar skill dan pesan saat daftar kosong |
 | `SkillCard` | `name`, `description`, `category`, `platform`, `author`, `favs`, `onDelete` | Kartu untuk satu skill |
+| `GitHubSkills` | - | Daftar skill populer dari GitHub Search API (Minggu 7) |
 
 ### Interaktivitas
 
@@ -85,3 +88,82 @@ ai-skillhub-react/
 | Mengisi form | ![](docs/screenshots/06-isi-form.png) |
 | Setelah klik Tambah | ![](docs/screenshots/07-setelah-tambah.png) |
 | Daftar kosong | ![](docs/screenshots/08-daftar-kosong.png) |
+
+---
+
+## Minggu 7: Ajax dan Konsumsi API Eksternal
+
+Fitur baru: section **Skill Populer dari GitHub** (`src/components/GitHubSkills.jsx`) yang mengambil daftar repository AI skills dari GitHub secara asinkron menggunakan `fetch()`.
+
+### Endpoint yang Dipakai
+
+```
+GET https://api.github.com/search/repositories?q=topic:agent-skills&sort=stars&per_page=6
+```
+
+| Parameter | Arti |
+|---|---|
+| `q=topic:agent-skills` | Cari repository yang diberi topik `agent-skills` |
+| `sort=stars` | Urutkan dari bintang terbanyak |
+| `per_page=6` | Ambil 6 repository teratas |
+
+**Alasan memilih endpoint ini:**
+
+1. **Sesuai tema aplikasi.** AI SkillHub adalah tempat menemukan AI skills, dan sebagian besar skill tersebut memang dipublikasikan di GitHub. Topik `agent-skills` berisi repository skill sungguhan seperti `anthropics/skills` dan `addyosmani/agent-skills`, sehingga data yang tampil relevan, bukan data contoh.
+2. **Gratis dan tanpa pendaftaran.** GitHub Search API bisa dipakai tanpa token untuk membaca data publik.
+3. **Mendukung CORS.** Respons GitHub mengirim header `Access-Control-Allow-Origin: *`, jadi bisa dipanggil langsung dari browser tanpa server perantara.
+
+Batasan: tanpa token, GitHub hanya mengizinkan 10 request pencarian per menit. Jika batas ini terlewati, GitHub membalas status 403 dan aplikasi menampilkan kondisi error beserta tombol **Coba Lagi**.
+
+### Penerapan Pola Loading, Success, dan Error
+
+Semua logika ada di component `GitHubSkills`.
+
+**1. Tiga state untuk menyimpan kondisi request**
+
+```jsx
+const [status, setStatus] = useState('loading') // 'loading' | 'success' | 'error'
+const [repos, setRepos] = useState([])
+const [errorMessage, setErrorMessage] = useState('')
+```
+
+Status awal dibuat `'loading'` karena data langsung diambil begitu halaman dibuka.
+
+**2. Fungsi `fetchSkills()` untuk mengambil data**
+
+- Memanggil `fetch(API_URL)` dengan `async/await`.
+- `fetch` tidak otomatis gagal ketika server membalas 404 atau 403, jadi `response.ok` dicek manual. Jika `false`, fungsi melempar `Error` berisi kode statusnya.
+- Jika berhasil, `data.items` disimpan ke `repos` dan status diubah menjadi `'success'`.
+- Semua kegagalan (status bukan 2xx, internet putus, atau CORS) ditangkap di blok `catch`. Pesan error disimpan ke `errorMessage` dan status diubah menjadi `'error'`.
+
+**3. `useEffect` untuk memanggil API saat halaman dibuka**
+
+```jsx
+useEffect(() => {
+  fetchSkills()
+}, [])
+```
+
+Array dependency kosong `[]` membuat request hanya dijalankan sekali saat component pertama kali tampil.
+
+**4. Conditional rendering berdasarkan `status`**
+
+| Kondisi | Yang ditampilkan |
+|---|---|
+| `status === 'loading'` | Kotak dengan teks "Memuat skill dari GitHub..." yang berkedip (`animate-pulse`) |
+| `status === 'success'` | Daftar kartu repository memakai `repos.map()` dengan `key={repo.id}`. Tiap kartu berisi nama, deskripsi, bahasa, jumlah bintang, dan link "Buka di GitHub" |
+| `status === 'error'` | Pesan "Gagal memuat data dari GitHub.", detail penyebabnya (misalnya "Server GitHub membalas dengan status 404."), dan tombol **Coba Lagi** |
+
+**5. Interaksi: tombol Coba Lagi (`handleRetry()`)**
+
+Tombol ini hanya muncul saat kondisi error. Ketika diklik, `handleRetry()` mengubah status kembali ke `'loading'` lalu memanggil `fetchSkills()` lagi, sehingga pengguna bisa mengulang request tanpa me-reload halaman.
+
+### Screenshot
+
+Kondisi error disimulasikan dengan mengalihkan request ke endpoint yang salah (`/search/repositoriez`), sehingga GitHub membalas status 404. Setelah itu endpoint dikembalikan seperti semula dan tombol **Coba Lagi** berhasil memuat data lagi.
+
+| Kondisi | Screenshot |
+|---|---|
+| Loading | ![](docs/screenshots/minggu-7/01-loading.png) |
+| Success | ![](docs/screenshots/minggu-7/02-success.png) |
+| Error | ![](docs/screenshots/minggu-7/03-error.png) |

@@ -3,6 +3,7 @@ import Header from './components/Header'
 import SkillSummary from './components/SkillSummary'
 import SkillForm from './components/SkillForm'
 import SkillList from './components/SkillList'
+import GitHubSkills from './components/GitHubSkills'
 
 const categories = ['Design', 'Security', 'Data', 'Writing', 'Research', 'Automation']
 const platforms = ['Claude', 'OpenAI', 'Gemini', 'AI Agent', 'General']
@@ -79,6 +80,8 @@ function App() {
             <SkillList skills={skills} onDelete={deleteSkill} />
           </section>
         </div>
+
+        <GitHubSkills />
       </main>
     </>
   )
