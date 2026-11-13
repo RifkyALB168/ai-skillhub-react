@@ -1,4 +1,4 @@
-# AI SkillHub (React)
+# AI SkillHub (React + NestJS)
 
 **Nama:** Rifky Albuchori  
 **NIM:** 103022400126  
@@ -9,7 +9,7 @@
 
 ## Deskripsi
 
-AI SkillHub adalah aplikasi untuk menemukan, menyimpan, dan membagikan *AI Skills* dari berbagai ekosistem AI (Claude, OpenAI, Gemini, hingga AI Agents). Repository ini adalah frontend React yang akan terus dikembangkan sampai pekan ke-14 dan disambungkan ke backend/API pada pekan ke-11.
+AI SkillHub adalah aplikasi untuk menemukan, menyimpan, dan membagikan *AI Skills* dari berbagai ekosistem AI (Claude, OpenAI, Gemini, hingga AI Agents). Repository ini berisi frontend React dan backend NestJS. Sejak Minggu 9, data Skill dikelola melalui REST API dengan struktur MVC.
 
 **Entitas utama:** Skill, dengan atribut `name`, `description`, `category`, `platform`, `author`, dan `favs`.
 
@@ -17,45 +17,66 @@ AI SkillHub adalah aplikasi untuk menemukan, menyimpan, dan membagikan *AI Skill
 
 - [React 19](https://react.dev/) dengan [Vite](https://vite.dev/)
 - [Tailwind CSS v4](https://tailwindcss.com/) melalui plugin `@tailwindcss/vite`
+- [NestJS 11](https://nestjs.com/), TypeScript, class-validator, dan Swagger UI untuk backend
 - Font [Geist](https://fonts.google.com/specimen/Geist) dari Google Fonts
 
 ## Cara Menjalankan
+
+Gunakan Node.js 24 (versi yang digunakan untuk pengujian proyek ini).
+
+**Terminal 1 - backend:**
+
+```bash
+cd backend
+npm install
+npm run start:dev
+```
+
+**Terminal 2 - frontend (dari root repository):**
 
 ```bash
 npm install
 npm run dev
 ```
 
-Buka `http://localhost:5173` di browser.
+- Frontend: http://127.0.0.1:5173
+- REST API: http://localhost:3000/api/skills
+- Swagger UI: http://localhost:3000/docs
 
-> Jika PowerShell menolak menjalankan `npm` karena *execution policy*, gunakan `npm.cmd run dev` atau jalankan dari Git Bash/CMD.
+Vite meneruskan request frontend `/api` ke backend port 3000. Jalankan kedua server untuk menggunakan daftar Skill. Build frontend yang di-deploy juga memerlukan reverse proxy `/api` ke backend; proxy Vite hanya berlaku saat pengembangan.
 
-## Struktur Folder
+> Jika PowerShell menolak menjalankan `npm`, gunakan `npm.cmd`, misalnya `npm.cmd run dev`.
 
-```
+## Struktur Folder dan MVC
+
+```text
 ai-skillhub-react/
-├── index.html
-├── public/
-│   └── logo.svg
-├── src/
-│   ├── main.jsx
-│   ├── App.jsx
-│   ├── index.css
-│   └── components/
-│       ├── Header.jsx
-│       ├── SkillSummary.jsx
-│       ├── SkillForm.jsx
-│       ├── SkillList.jsx
-│       ├── SkillCard.jsx
-│       └── GitHubSkills.jsx
-└── docs/
-    └── screenshots/
-        └── minggu-7/
+├── src/                              # View: frontend React
+│   ├── App.jsx                       # State dan alur CRUD frontend
+│   ├── components/                   # Form tambah/ubah dan kartu skill
+│   └── services/skillsApi.js          # Request HTTP ke backend
+├── backend/
+│   ├── src/
+│   │   ├── main.ts                   # Global ValidationPipe, CORS, Swagger
+│   │   ├── app.module.ts
+│   │   └── skills/
+│   │       ├── entities/skill.entity.ts
+│   │       ├── dto/create-skill.dto.ts
+│   │       ├── dto/update-skill.dto.ts
+│   │       ├── skills.service.ts
+│   │       ├── skills.controller.ts
+│   │       └── skills.module.ts
+│   └── test/app.e2e-spec.ts
+└── docs/screenshots/
+    ├── minggu-7/
+    └── minggu-9/
 ```
 
 ---
 
 ## Minggu 6: React Dasar
+
+> Bagian ini mencatat implementasi saat Minggu 6. Sejak Minggu 9, data awal dipindahkan ke backend dan form memakai onSave untuk POST/PATCH.
 
 ### Component
 
@@ -167,3 +188,162 @@ Kondisi error disimulasikan dengan mengalihkan request ke endpoint yang salah (`
 | Loading | ![](docs/screenshots/minggu-7/01-loading.png) |
 | Success | ![](docs/screenshots/minggu-7/02-success.png) |
 | Error | ![](docs/screenshots/minggu-7/03-error.png) |
+
+
+---
+
+## Minggu 9: NestJS Dasar + Struktur MVC
+
+### Data Utama dan Pembagian Tanggung Jawab
+
+Entitas utama adalah **Skill**, yang mengikuti data di frontend:
+
+| Field | Tipe | Keterangan |
+|---|---|---|
+| id | number | Dibuat otomatis oleh Service, tidak diterima dari form |
+| name | string | Nama skill yang unik, mengabaikan kapital dan spasi di tepi |
+| description | string | Kegunaan skill |
+| category | string | Design, Security, Data, Writing, Research, Automation |
+| platform | string | Claude, OpenAI, Gemini, AI Agent, General |
+| author | string | Nama atau handle kontributor |
+| favs | number | Jumlah favorit, integer >= 0 |
+
+- **Model:** `Skill` menyatakan bentuk data. `SkillsService` mengelola array di memori dan aturan bisnis, termasuk CRUD serta pengecekan nama duplikat.
+- **View:** React menampilkan data dan menerima input. Tampilan tetap di `src/components`; tidak perlu membuat template HTML di backend karena API mengirim JSON ke React.
+- **Controller:** `SkillsController` menerima HTTP request dan meneruskannya ke Service. Service di-inject lewat constructor, bukan dibuat dengan `new SkillsService()`.
+- **DTO:** `CreateSkillDto` dan `UpdateSkillDto` memvalidasi payload sebelum diteruskan ke Service.
+- **Module:** `SkillsModule` mendaftarkan Controller dan Service, kemudian diimpor oleh `AppModule`.
+
+Alur: **React -> request HTTP -> DTO/ValidationPipe -> Controller -> Service -> array Skill -> JSON -> React**.
+Secara teknis pipe memvalidasi payload sebelum method Controller dijalankan.
+
+Empat skill awal berasal dari tugas React sebelumnya. ID baru dibuat berurutan dan ID yang dihapus tidak digunakan ulang. Data tidak disimpan ke database; restart backend mengembalikan empat data awal.
+
+### Scaffold Melalui Nest CLI
+
+Backend dan resource dibuat menggunakan perintah:
+
+```bash
+npx @nestjs/cli@11 new backend --package-manager npm --skip-git --skip-install --strict
+cd backend
+npx @nestjs/cli@11 generate resource skills --type rest --crud --no-spec
+npm install @nestjs/swagger@11 class-validator class-transformer
+```
+
+Setelah scaffold, Entity, DTO, Controller, dan Service disesuaikan dengan data Skill.
+
+### Endpoint CRUD
+
+| Method | Endpoint | Fungsi Service | Berhasil |
+|---|---|---|---|
+| GET | /api/skills | findAll() | 200, array skill |
+| GET | /api/skills/:id | findOne(id) | 200, satu skill |
+| POST | /api/skills | create(dto) | 201, skill baru |
+| PATCH | /api/skills/:id | update(id, dto) | 200, skill hasil perubahan |
+| DELETE | /api/skills/:id | remove(id) | 200, skill yang dihapus |
+
+Contoh POST:
+
+```json
+{
+  "name": "Code Review Helper",
+  "description": "Meninjau kode dan memberikan saran perbaikan.",
+  "category": "Automation",
+  "platform": "Claude",
+  "author": "@rifky",
+  "favs": 0
+}
+```
+
+Contoh PATCH (cukup kirim field yang ingin diubah):
+
+```json
+{
+  "name": "Code Review Updated",
+  "favs": 12
+}
+```
+
+### DTO dan Validasi Global
+
+`main.ts` mengaktifkan `ValidationPipe` secara global dengan `whitelist: true`, `forbidNonWhitelisted: true`, dan `transform: true`. Field asing seperti `id` dari client ditolak dengan 400.
+
+Aturan di `CreateSkillDto`:
+
+- `@IsString()`: nama, deskripsi, kategori, platform, dan author harus teks.
+- `@MinLength()` dan `@MaxLength()`: nama 3-100, deskripsi 10-500, author 2-50 karakter.
+- `@IsIn()`: kategori dan platform hanya menerima pilihan yang tersedia.
+- `@IsInt()` dan `@Min(0)`: favorit wajib integer dan tidak boleh negatif.
+- `@Transform()`: spasi di tepi nama, deskripsi, dan author dibuang sebelum validasi.
+
+`UpdateSkillDto` memakai `PartialType(CreateSkillDto)` dari `@nestjs/swagger`, sehingga field boleh tidak dikirim tetapi aturan Create tetap berlaku pada field yang dikirim. Nilai `null` tetap ditolak. Parameter ID diproses menggunakan `ParseIntPipe`, sehingga ID bukan integer menghasilkan 400.
+
+### Penanganan Error
+
+| Penyebab | Exception | HTTP |
+|---|---|---|
+| Payload/ID tidak valid | BadRequestException dari ValidationPipe/ParseIntPipe | 400 |
+| ID tidak ada (GET, PATCH, DELETE) | NotFoundException di findOne() | 404 |
+| Nama sudah dipakai (POST/PATCH) | ConflictException di checkDuplicate() | 409 |
+
+### REST Client Terpasang: Swagger UI
+
+Swagger terpasang di backend melalui `@nestjs/swagger`, sehingga pengujian bisa dilakukan langsung di browser tanpa Postman.
+
+1. Jalankan backend lalu buka http://localhost:3000/docs.
+2. Buka endpoint, klik **Try it out**, isi ID/body bila diperlukan.
+3. Klik **Execute**.
+4. Periksa **Curl**, **Request URL**, **Server response**, kode status, dan response body.
+
+Seluruh endpoint diuji melalui Swagger sebelum alur integrasi React diuji. Screenshot merupakan request dan respons server sungguhan.
+
+### Integrasi React
+
+`src/services/skillsApi.js` mengirim request dengan `fetch`. `App.jsx` mengambil daftar dari backend saat halaman dibuka. Form `SkillForm` memanggil POST ketika menambah dan PATCH ketika menyimpan perubahan. Tombol Hapus memanggil DELETE.
+
+State React baru diperbarui setelah server berhasil. Saat request berlangsung, tombol dinonaktifkan agar tidak terkirim ganda. Jika gagal, pesan error tampil dan input form tetap ada. Nama duplikat dari backend juga tampil di form.
+
+Alur yang diuji: **Tambah -> Ubah -> reload browser (perubahan tetap ada) -> Hapus**. Reload browser tidak mereset array backend; restart proses backend meresetnya.
+
+### Verifikasi
+
+Dari root repository:
+
+```bash
+npm run build
+npm run lint
+cd backend
+npm run build
+npm run lint
+npm run test:e2e -- --runInBand
+```
+
+Pengujian otomatis mencakup 21 kasus: CRUD, nilai yang benar-benar berubah, ID tidak digunakan ulang, 404, duplikat POST/PATCH, field asing, panjang teks, nilai kategori/platform, tipe favorit, null, dan ID bukan integer.
+
+### Screenshot Request dan Response
+
+| Tahap | Bukti |
+|---|---|
+| GET daftar - 200 | [Screenshot](docs/screenshots/minggu-9/01-get-list.jpg) |
+| POST tambah - 201 | [Screenshot](docs/screenshots/minggu-9/02-post-create.jpg) |
+| GET detail - 200 | [Screenshot](docs/screenshots/minggu-9/03-get-detail.jpg) |
+| PATCH ubah - 200 | [Screenshot](docs/screenshots/minggu-9/04-patch-update.jpg) |
+| DELETE - 200 | [Screenshot](docs/screenshots/minggu-9/05-delete.jpg) |
+| Nama duplikat - 409 | [Screenshot](docs/screenshots/minggu-9/06-error-409.jpg) |
+| Data tidak ditemukan - 404 | [Screenshot](docs/screenshots/minggu-9/07-error-404.jpg) |
+| Validasi gagal - 400 | [Screenshot](docs/screenshots/minggu-9/08-error-400.jpg) |
+| React setelah tambah | [Screenshot](docs/screenshots/minggu-9/09-react-create.jpg) |
+| React setelah ubah dan reload | [Screenshot](docs/screenshots/minggu-9/10-react-update-reload.jpg) |
+| React setelah hapus | [Screenshot](docs/screenshots/minggu-9/11-react-delete.jpg) |
+| React pada mobile | [Screenshot](docs/screenshots/minggu-9/12-react-mobile.jpg) |
+
+<details>
+<summary>Pratinjau POST dan alur React</summary>
+
+![POST 201](docs/screenshots/minggu-9/02-post-create.jpg)
+
+![React setelah tambah](docs/screenshots/minggu-9/09-react-create.jpg)
+
+</details>
+
+Referensi implementasi: [Nest CLI resource](https://docs.nestjs.com/recipes/crud-generator), [validasi DTO](https://docs.nestjs.com/techniques/validation), dan [Swagger UI](https://docs.nestjs.com/openapi/introduction).
