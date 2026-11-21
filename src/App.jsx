@@ -1,15 +1,41 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Header from './components/Header'
 import SkillSummary from './components/SkillSummary'
 import SkillForm from './components/SkillForm'
 import SkillList from './components/SkillList'
 import GitHubSkills from './components/GitHubSkills'
-import { skillsApi } from './services/skillsApi'
+import { createSkillsApi } from './services/skillsApi'
+import AuthForm from './components/AuthForm'
 
 const categories = ['Design', 'Security', 'Data', 'Writing', 'Research', 'Automation']
 const platforms = ['Claude', 'OpenAI', 'Gemini', 'AI Agent', 'General']
 
 function App() {
+  const [token, setToken] = useState('')
+  const [sessionMessage, setSessionMessage] = useState('')
+
+  const onUnauthorized = useCallback((rejectedToken) => {
+    setSession((current) => current.token === rejectedToken
+      ? { token: '', message: 'Sesi berakhir. Silakan masuk kembali.' }
+      : current)
+  }, [])
+
+  return (
+    <>
+      <Header title="AI SkillHub" subtitle="Kumpulan AI Skills dari Claude, OpenAI, Gemini, dan lainnya" />
+      {session.token ? (
+        <SkillDashboard
+          token={session.token}
+          onUnauthorized={onUnauthorized}
+          onLogout={() => setSession({ token: '', message: '' })}
+        />
+      ) : <AuthForm onLogin={(token) => setSession({ token, message: '' })} sessionMessage={session.message} />}
+    </>
+  )
+}
+
+function SkillDashboard({ token, onUnauthorized, onLogout }) {
+  const skillsApi = useMemo(() => createSkillsApi(token, onUnauthorized), [token, onUnauthorized])
   const [skills, setSkills] = useState([])
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
@@ -17,7 +43,7 @@ function App() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState('')
 
-  async function loadSkills() {
+  const loadSkills = useCallback(async () => {
     try {
       const data = await skillsApi.findAll()
       setSkills(data)
@@ -27,11 +53,11 @@ function App() {
       setError(err.message)
       setStatus('error')
     }
-  }
+  }, [skillsApi])
 
   useEffect(() => {
     void loadSkills()
-  }, [])
+  }, [loadSkills])
 
   async function saveSkill(form) {
     setBusy(true)
@@ -72,9 +98,10 @@ function App() {
   const totalFavorit = skills.reduce((total, skill) => total + skill.favs, 0)
 
   return (
-    <>
-      <Header title="AI SkillHub" subtitle="Kumpulan AI Skills dari Claude, OpenAI, Gemini, dan lainnya" />
-      <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+    <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+        <div className="flex justify-end">
+          <button type="button" onClick={onLogout} className="min-h-11 rounded border border-neutral-700 px-4 py-2 hover:bg-neutral-900">Keluar</button>
+        </div>
         <SkillSummary totalSkill={skills.length} totalKategori={totalKategori} totalFavorit={totalFavorit} />
         {notice && <p role="status" className="text-neutral-200">{notice}</p>}
         {error && <p role="alert" className="text-red-400">{error}</p>}
@@ -102,8 +129,7 @@ function App() {
           </div>
         )}
         <GitHubSkills />
-      </main>
-    </>
+    </main>
   )
 }
 

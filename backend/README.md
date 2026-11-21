@@ -13,6 +13,12 @@ CREATE DATABASE ai_skillhub OWNER skillhub;
 
 Hak `CREATEDB` diperlukan agar `prisma migrate dev` bisa membuat database sementara untuk memeriksa migrasi. Salin `.env.example` ke `.env` dalam folder `backend` lalu sesuaikan `DATABASE_URL` dengan PostgreSQL lokal. Jika kata sandi berisi karakter khusus URL, gunakan bentuk percent-encoded.
 
+Sebelum menjalankan backend, isi JWT_SECRET di .env dengan nilai acak. Jalankan perintah ini untuk membuat nilainya:
+
+```bash
+node -p "require('node:crypto').randomBytes(32).toString('hex')"
+```
+
 Dari folder `backend`:
 
 ```bash

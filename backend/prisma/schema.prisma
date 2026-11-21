@@ -17,3 +17,9 @@ model Skill {
   author         String
   favs           Int    @default(0)
 }
+
+model User {
+  id           Int    @id @default(autoincrement())
+  email        String @unique
+  passwordHash String
+}

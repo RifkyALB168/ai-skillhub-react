@@ -372,3 +372,15 @@ Pengujian API membuat dan mengubah satu skill, menghentikan NestJS, lalu memulai
 | CRUD dan persistensi setelah restart NestJS | [Lihat bukti](docs/screenshots/minggu-10/04-crud-restart.jpg) |
 | Tampilan desktop | [Lihat screenshot](docs/screenshots/minggu-10/05-desktop.jpg) |
 | Tampilan mobile (390 px) | [Lihat screenshot](docs/screenshots/minggu-10/06-mobile.jpg) |
+
+---
+
+## JWT Auth dan Keamanan Dasar
+
+Migrasi Prisma menambahkan tabel User dengan email unik dan passwordHash. Setelah menjalankan migrasi, buka React dan klik **Buat akun**, lalu masuk dengan akun tersebut. POST /api/auth/register membuat akun, dan POST /api/auth/login mengembalikan accessToken.
+
+AuthService memakai bcrypt saat menyimpan dan memeriksa kata sandi. Seluruh endpoint /api/skills dilindungi JwtAuthGuard, yang memeriksa tanda tangan serta masa berlaku token. React menyimpan accessToken di memori dan menambahkannya ke header Authorization. Memuat ulang halaman mengharuskan pengguna masuk kembali.
+
+Untuk menguji di Swagger, jalankan register dan login, lalu masukkan accessToken melalui **Authorize** sebelum mencoba endpoint Skill. Helmet menambahkan header keamanan ke respons. Query aplikasi menggunakan metode Prisma dengan nilai input sebagai parameter untuk mengurangi risiko SQL injection.
+
+Konfigurasi JWT_SECRET dijelaskan di [panduan backend](backend/README.md). Bukti uji dan penjelasan ada di [laporan tugas](docs/Laporan-JWT-AI-SkillHub.docx).
