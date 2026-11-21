@@ -9,7 +9,7 @@
 
 ## Deskripsi
 
-AI SkillHub adalah aplikasi untuk menemukan, menyimpan, dan membagikan *AI Skills* dari berbagai ekosistem AI (Claude, OpenAI, Gemini, hingga AI Agents). Repository ini berisi frontend React dan backend NestJS. Sejak Minggu 9, data Skill dikelola melalui REST API dengan struktur MVC.
+AI SkillHub adalah aplikasi untuk menemukan, menyimpan, dan membagikan *AI Skills* dari berbagai ekosistem AI (Claude, OpenAI, Gemini, hingga AI Agents). Repository ini berisi frontend React dan backend NestJS. Sejak Minggu 9, data Skill dikelola melalui REST API dengan struktur MVC. Sejak Minggu 10, PostgreSQL menyimpan data Skill melalui Prisma.
 
 **Entitas utama:** Skill, dengan atribut `name`, `description`, `category`, `platform`, `author`, dan `favs`.
 
@@ -18,17 +18,21 @@ AI SkillHub adalah aplikasi untuk menemukan, menyimpan, dan membagikan *AI Skill
 - [React 19](https://react.dev/) dengan [Vite](https://vite.dev/)
 - [Tailwind CSS v4](https://tailwindcss.com/) melalui plugin `@tailwindcss/vite`
 - [NestJS 11](https://nestjs.com/), TypeScript, class-validator, dan Swagger UI untuk backend
+- PostgreSQL dan Prisma ORM 6 untuk penyimpanan Skill
 - Font [Geist](https://fonts.google.com/specimen/Geist) dari Google Fonts
 
 ## Cara Menjalankan
 
 Gunakan Node.js 24 (versi yang digunakan untuk pengujian proyek ini).
 
+Buat database PostgreSQL lokal dan isi DATABASE_URL di backend/.env berdasarkan backend/.env.example. Detail setup tersedia di [panduan backend](backend/README.md).
+
 **Terminal 1 - backend:**
 
 ```bash
 cd backend
 npm install
+npx prisma migrate dev
 npm run start:dev
 ```
 
@@ -194,6 +198,8 @@ Kondisi error disimulasikan dengan mengalihkan request ke endpoint yang salah (`
 
 ## Minggu 9: NestJS Dasar + Struktur MVC
 
+> Bagian ini mencatat penyimpanan di memori pada Minggu 9. Implementasi saat ini memakai PostgreSQL.
+
 ### Data Utama dan Pembagian Tanggung Jawab
 
 Entitas utama adalah **Skill**, yang mengikuti data di frontend:
@@ -347,3 +353,22 @@ Pengujian otomatis mencakup 21 kasus: CRUD, nilai yang benar-benar berubah, ID t
 </details>
 
 Referensi implementasi: [Nest CLI resource](https://docs.nestjs.com/recipes/crud-generator), [validasi DTO](https://docs.nestjs.com/techniques/validation), dan [Swagger UI](https://docs.nestjs.com/openapi/introduction).
+
+---
+
+## Minggu 10: REST API + PostgreSQL + Prisma
+
+Data **Skill** sekarang tersimpan di PostgreSQL lokal pada database `ai_skillhub`. Modelnya ada di `backend/prisma/schema.prisma`. Migrasi awal membuat tabel `Skill` dan memasukkan empat skill dari Minggu 9. Kolom internal `normalizedName` memiliki indeks unik sehingga nama dengan kapitalisasi berbeda tetap dianggap duplikat.
+
+`PrismaModule` menyediakan `PrismaService` untuk `SkillsService`. Operasi CRUD memakai `create`, `findMany`, `findUnique`, `update`, dan `delete` dari Prisma Client. Endpoint dan format respons tetap sama.
+
+Pengujian API membuat dan mengubah satu skill, menghentikan NestJS, lalu memulai proses baru. GET masih mengembalikan nilai yang sudah diubah. Setelah DELETE, GET untuk ID yang sama mengembalikan 404. Alur tambah, ubah, dan hapus juga diuji melalui React. Sebanyak 23 tes integrasi lolos pada database tes terpisah.
+
+| Tahap | Screenshot |
+|---|---|
+| Database PostgreSQL dan tabel Skill | [Lihat bukti](docs/screenshots/minggu-10/01-postgresql.jpg) |
+| Model Prisma dan PrismaService | [Lihat bukti](docs/screenshots/minggu-10/02-model-provider.jpg) |
+| Hasil `npx prisma migrate dev` | [Lihat bukti](docs/screenshots/minggu-10/03-migrasi.jpg) |
+| CRUD dan persistensi setelah restart NestJS | [Lihat bukti](docs/screenshots/minggu-10/04-crud-restart.jpg) |
+| Tampilan desktop | [Lihat screenshot](docs/screenshots/minggu-10/05-desktop.jpg) |
+| Tampilan mobile (390 px) | [Lihat screenshot](docs/screenshots/minggu-10/06-mobile.jpg) |

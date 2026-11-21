@@ -3,6 +3,7 @@ import {
   IsIn,
   IsInt,
   IsString,
+  Max,
   MaxLength,
   Min,
   MinLength,
@@ -58,8 +59,9 @@ export class CreateSkillDto {
   @MaxLength(50)
   author: string;
 
-  @ApiProperty({ example: 0, minimum: 0 })
+  @ApiProperty({ example: 0, minimum: 0, maximum: 2_147_483_647 })
   @IsInt()
   @Min(0)
+  @Max(2_147_483_647)
   favs: number;
 }

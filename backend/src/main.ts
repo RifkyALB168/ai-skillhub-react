@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  app.enableShutdownHooks();
   app.setGlobalPrefix('api');
   app.enableCors({
     origin: ['http://localhost:5173', 'http://127.0.0.1:5173'],
@@ -19,7 +20,7 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle('AI SkillHub API')
     .setDescription(
-      'CRUD Skill di memori. Klik Try it out untuk menguji endpoint.',
+      'CRUD Skill dengan PostgreSQL. Klik Try it out untuk menguji endpoint.',
     )
     .setVersion('1.0')
     .build();
